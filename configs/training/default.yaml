@@ -1,0 +1,17 @@
+training:
+  batch_size: 8
+  #gradient_accumulation_steps: 8
+  max_iters: 100000
+
+  learning_rate: 0.0003
+  #min_lr: 0.00003
+  #warmup_iters: 2000
+
+  #weight_decay: 0.1
+  #grad_clip: 1.0
+
+  #precision: bf16
+  #eval_interval: 500
+  #save_interval: 1000
+
+  seed: 1337
