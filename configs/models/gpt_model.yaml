@@ -7,3 +7,11 @@ model:
   n_embd: 384
   dropout: 0.2
   bias: false
+
+training:
+  test1: 123
+
+
+optimizer:
+  test2: 321
+
