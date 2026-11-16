@@ -1,0 +1,9 @@
+model:
+  #vocab_size: 50257 # in andrej karpathy video we had set this as length of all unique char in the dataset (ie a character-level tokenizer)
+  # later on we will set specific vocab size when we will use BPE tokenizer (Byte Pair Encoding)
+  block_size: 1024
+  n_layer: 6
+  n_head: 6
+  n_embd: 384
+  dropout: 0.2
+  bias: false
