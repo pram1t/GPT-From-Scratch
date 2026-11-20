@@ -1,1 +1,52 @@
 # needs attention.py and layers.py
+
+import torch
+import torch.nn as nn
+import math
+
+class head(nn.Module):
+  def __init__(self, block_size, n_embd, head_size): # T, C, size of the output head (last dim of the output) here on a single head attention block we do not need n_head, so head size is
+    # now here in a single head, head size can be n_embd / 1 which is completely fine but we chose a divisible number instead
+    super().__init__()
+    self.block_size = block_size
+    self.n_embd = n_embd
+    self.head_size = head_size
+    self.query = nn.Linear(n_embd, head_size) # this can be nn.Linear(n_embd, n_embd) ie both in feature and out feature be same as n_embd as for 1 head head size == n_embd
+    # For single-head attention, head_size can be any positive integer. It doesn't need to divide n_embd.
+    self.key = nn.Linear(n_embd, head_size)
+    self.value = nn.Linear(n_embd, head_size)
+    self.register_buffer("mask", torch.tril(torch.ones(block_size, block_size)))
+
+  def forward(self, x):
+    b, t, c = x.shape
+    q = self.query(x)
+    k = self.key(x)
+    v = self.value(x)
+
+    print("query shape: ", q.shape)
+    print("key shape: ", k.shape)
+    print("value shape: ", v.shape)
+
+    score = q @ k.transpose(-2, -1)/math.sqrt(self.head_size)
+    masked_score = score.masked_fill(self.mask[:t, :t]==0, float('-inf'))
+    print("weight size: ", masked_score.shape)
+    softmax_score = torch.softmax(masked_score, dim=-1)# dim=-1 means apply the softmax on the last dim!
+    output = softmax_score @ v
+
+    print("output shape: ",output.shape)
+    return output
+
+
+
+if __name__ == "__main__":
+  # 3 step
+  # step 1: intialize the model
+  model = head(1024, 384, 48)# block_size, n_embd, head_size, what goes in to the def __init__() function
+
+  # step 2: define the input(s)
+  x = torch.rand(2,10,384)
+
+  # step 3: pass the input and recieve the output
+  output = model(x) # this is used in the def forward() function
+
+  print(output)
