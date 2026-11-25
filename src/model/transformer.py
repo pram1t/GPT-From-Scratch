@@ -7,7 +7,7 @@ from attention import MultiHead
 from mlp import MLP
 
 class Transformer(nn.Module):
-    def __init__(self, block_size, n_embd, n_head, dropout, eps=1e-5, bias=False, ExpandFactor=4):
+    def __init__(self, block_size, n_embd, n_head, dropout, eps=1e-5, bias=False, expand_factor=4):
         super().__init__()
         # we do these below to store these as attribute of the class but it's not required
         # as we simply use these to construct child modules.
@@ -20,7 +20,7 @@ class Transformer(nn.Module):
         self.ln1 = LayerNorms(n_embd, eps)
         self.attention = MultiHead(block_size, n_embd, n_head, dropout)
         self.ln2 = LayerNorms(n_embd, eps)
-        self.mlp = MLP(n_embd, ExpandFactor, dropout, bias)
+        self.mlp = MLP(n_embd, expand_factor, dropout, bias)
 
 
     def forward(self, X):
