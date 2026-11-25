@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 class GPTEmbedding(nn.Module):
-    def __init__(self, vocab_size, block_size, n_embd):
+    def __init__(self, block_size, vocab_size, n_embd):
         super().__init__()
         # vocab_size = self.vocab_size
         # n_embd = self.n_embd
@@ -13,7 +13,7 @@ class GPTEmbedding(nn.Module):
         self.pos_embd = nn.Embedding(block_size, n_embd)
 
     def forward(self, idx):
-        B,T = idx.size()
+        B,T = idx.shape
         text_embedding = self.txt_embd(idx)
         pos_embedding = self.pos_embd(torch.arange(T, device=idx.device))
         block = text_embedding + pos_embedding
