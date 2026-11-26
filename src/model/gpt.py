@@ -15,8 +15,9 @@ class GPT(nn.Module):
     # as the output of this layer norm will be the input to the language model input!
     self.LM = nn.Linear(n_embd, vocab_size, bias)
     self.embedding = GPTEmbedding(block_size, vocab_size, n_embd)
+    self.loss_fn = nn.CrossEntropyLoss()
 
-  def forward(self, x):
+  def forward(self, x, targets=None): # target is set to None as its optional during the final text generation we don't need that
     # blocks_output = [out = block(out) for block in self.transformer]
     # 1. this out=Block(out) doesn't work, with a one line loop (list comprehension)
     # 2. no need to store this as an list where it captures list comprehension, we just need to return the final out
@@ -27,11 +28,17 @@ class GPT(nn.Module):
 
     ln_f_output = self.ln_f(output)
     lm_output = self.LM(ln_f_output)
-    return lm_output
+    B, T, vocab_size = lm_output.shape
+    # if targets : this is wrong as a python tensor can't be evaluated as a single boolean
+    loss = None
+    if targets is not None:
+        lm_flat = lm_output.view(B*T, vocab_size)
+        targets_flat = targets.view(B*T)
+        loss = self.loss_fn(lm_flat, targets_flat)
+    return lm_output, loss
 
 
 if __name__ == "__main__":
-    import torch
 
     # Model configuration
     block_size = 1024
@@ -41,7 +48,7 @@ if __name__ == "__main__":
     dropout = 0.1
     n_block = 6
 
-    # Initialize GPT
+    # Initialize model
     model = GPT(
         block_size=block_size,
         vocab_size=vocab_size,
@@ -51,18 +58,43 @@ if __name__ == "__main__":
         n_block=n_block
     )
 
-    # Create dummy input embeddings: (B, T, C)
-    # x = torch.randn(2, 10, n_embd)
-    x = torch.randint(0, vocab_size, (2, 10)) # syntax: torch.randint(low, high, size)
+    # Create dummy input and target token IDs
+    x = torch.randint(0, vocab_size, (2, 10))
+    targets = torch.randint(0, vocab_size, (2, 10))
 
     # Forward pass
-    logits = model(x)
+    logits, loss = model(x, targets)
 
-    # Print shapes
-    print("Input shape:", x.shape)
+    # 1. Check logits shape
     print("Logits shape:", logits.shape)
-
-    # Verify expected output
     assert logits.shape == (2, 10, vocab_size)
 
-    print("GPT forward pass successful!")
+    # 2. Check loss is scalar
+    print("Loss:", loss.item())
+    print("Loss shape:", loss.shape)
+    assert loss.shape == torch.Size([])
+
+    # 3. Backpropagation
+    model.zero_grad()
+    loss.backward()
+
+    # Check whether model parameters received gradients
+    params_with_grad = 0
+    params_without_grad = 0
+
+    for name, param in model.named_parameters():
+        if param.grad is not None:
+            params_with_grad += 1
+        else:
+            params_without_grad += 1
+
+    print("Parameters with gradients:", params_with_grad)
+    print("Parameters without gradients:", params_without_grad)
+
+    assert params_with_grad > 0
+    assert params_without_grad == 0
+
+    print("\nAll GPT training tests passed!")
+
+    # x = torch.randn(2, 10, n_embd)
+    # x = torch.randint(0, vocab_size, (2, 10)) # syntax: torch.randint(low, high, size)
